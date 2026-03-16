@@ -16,6 +16,7 @@
     "@react-three/fiber": "^8.15.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.13.1",
     "three": "^0.160.0"
   },
   "devDependencies": {
@@ -29,7 +30,12 @@
   "build": {
     "appId": "com.personalitymatrix.app",
     "productName": "Personality Matrix",
-    "directories": { "output": "dist-electron" },
-    "files": ["dist/**/*", "electron/**/*"]
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ]
   }
 }

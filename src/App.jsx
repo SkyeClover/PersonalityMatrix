@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import PersonalityMatrix3D from './components/PersonalityMatrix3D';
 import {
   getTodayKey,
@@ -117,12 +118,22 @@ export default function App() {
       let data;
       if (typeof window !== 'undefined' && window.electronAPI?.fetchOura) {
         data = await window.electronAPI.fetchOura(token, startDate, endDate);
+        if (data.errors?.length) data.errors = data.errors.map((e) => `${e}: request failed.`);
+        else data.errors = [];
       } else {
         data = await fetchOuraData(token, startDate, endDate);
       }
       const updated = mergeOuraIntoDays(data);
-      setOuraSuccess(`Imported ${updated} days from Oura.`);
-      setTimeout(() => setOuraSuccess(null), 4000);
+      if (data.errors && data.errors.length > 0) {
+        setOuraError(data.errors.join(' '));
+      }
+      if (updated > 0) {
+        setOuraSuccess(`Imported ${updated} days from Oura.`);
+        setTimeout(() => setOuraSuccess(null), 4000);
+      } else if (!data.errors?.length) {
+        setOuraSuccess('No new data in the last 14 days. Sync your ring in the Oura app and try again.');
+        setTimeout(() => setOuraSuccess(null), 5000);
+      }
       setDay(getDay(dateKey));
     } catch (err) {
       setOuraError(err?.message || 'Import failed.');
@@ -506,6 +517,11 @@ export default function App() {
           )}
         </main>
       </div>
+      <footer className="app-footer">
+        <Link to="/privacy">Privacy</Link>
+        <span className="footer-sep">·</span>
+        <Link to="/terms">Terms</Link>
+      </footer>
     </div>
   );
 }
