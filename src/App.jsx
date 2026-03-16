@@ -23,6 +23,15 @@ import OuraSummaryCard, { scoreColor } from './components/OuraSummaryCard';
 
 const TABS = ['Morning', 'Evening', 'Daily log', 'Progress'];
 
+/** Time-based greeting (local time). */
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Good night';
+}
+
 function RatingRow({ node, value, onChange }) {
   return (
     <li className="rating-row">
@@ -108,6 +117,7 @@ export default function App() {
   const [ouraFetching, setOuraFetching] = useState(false);
   const [ouraError, setOuraError] = useState(null);
   const [ouraSuccess, setOuraSuccess] = useState(null);
+  const [progressStatsExpanded, setProgressStatsExpanded] = useState(false);
 
   const fetchOuraDataInternal = useCallback(async (token) => {
     setOuraFetching(true);
@@ -263,31 +273,38 @@ export default function App() {
   const trends = getTrends(14);
   const isToday = dateKey === getTodayKey();
 
+  const greeting = getTimeGreeting();
+
   return (
     <div className="app">
       <header className="app-header">
-        <div className="header-row">
-          <h1>Personality Matrix</h1>
-          <div className="header-date">
+        <div className="header-top">
+          <p className="greeting">{greeting}</p>
+          <div className="header-actions">
             <input
               type="date"
               className="date-picker"
               value={dateKey}
               onChange={(e) => setDateKey(e.target.value)}
             />
-            {saved && <span className="saved-badge">Saved</span>}
+            {saved && <span className="saved-badge" key="saved">Saved</span>}
           </div>
         </div>
-        <p className="tagline">Daily check-in · Morning & evening · Goals · Daily log · Progress</p>
+        <div className="header-brand">
+          <h1 className="app-title">Personality Matrix</h1>
+          <p className="tagline">Daily check-in · Goals · Progress</p>
+        </div>
       </header>
 
       <div className="app-body">
         <aside className="sidebar">
-          <nav className="tabs">
+          <nav className="tabs" role="tablist">
             {TABS.map((t) => (
               <button
                 key={t}
                 type="button"
+                role="tab"
+                aria-selected={tab === t}
                 className={`tab ${tab === t ? 'active' : ''}`}
                 onClick={() => setTab(t)}
               >
@@ -296,7 +313,7 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="panel">
+          <div className="panel" key={tab}>
             {tab === 'Morning' && (
               <>
                 <section className="checkin-section">
@@ -470,29 +487,43 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="stats-block">
-                  <h3 className="stats-heading">Stats</h3>
-                  <p className="label-text">Sleep · Readiness · Steps (Oura or manual)</p>
-                  <div className="stats-table">
-                    <div className="stats-row stats-header">
-                      <span>Date</span>
-                      <span>Sleep</span>
-                      <span>Readiness</span>
-                      <span>Steps</span>
-                    </div>
-                    {statsTrends.slice().reverse().map((s) => (
-                      <div key={s.dateKey} className="stats-row">
-                        <span className="stats-date">{s.dateKey}</span>
-                        <span className="stats-score-cell" style={{ color: scoreColor(s.sleepScore ?? s.manualSleepQuality) }}>
-                          {s.sleepScore != null ? s.sleepScore : s.manualSleepQuality != null ? `M${s.manualSleepQuality}` : '—'}
-                        </span>
-                        <span className="stats-score-cell" style={{ color: scoreColor(s.readinessScore) }}>
-                          {s.readinessScore != null ? s.readinessScore : '—'}
-                        </span>
-                        <span>{s.steps != null ? s.steps.toLocaleString() : '—'}</span>
+                <div className="stats-block collapsible">
+                  <button
+                    type="button"
+                    className="stats-block-toggle"
+                    onClick={() => setProgressStatsExpanded((e) => !e)}
+                    aria-expanded={progressStatsExpanded}
+                  >
+                    <h3 className="stats-heading">Daily stats</h3>
+                    <span className="stats-block-summary">
+                      {statsTrends.length} days · Sleep · Readiness · Steps
+                    </span>
+                    <span className="stats-block-chevron" aria-hidden>{progressStatsExpanded ? '▼' : '▶'}</span>
+                  </button>
+                  {progressStatsExpanded && (
+                    <div className="stats-block-content">
+                      <div className="stats-table">
+                        <div className="stats-row stats-header">
+                          <span>Date</span>
+                          <span>Sleep</span>
+                          <span>Readiness</span>
+                          <span>Steps</span>
+                        </div>
+                        {statsTrends.slice().reverse().map((s) => (
+                          <div key={s.dateKey} className="stats-row">
+                            <span className="stats-date">{s.dateKey}</span>
+                            <span className="stats-score-cell" style={{ color: scoreColor(s.sleepScore ?? s.manualSleepQuality) }}>
+                              {s.sleepScore != null ? s.sleepScore : s.manualSleepQuality != null ? `M${s.manualSleepQuality}` : '—'}
+                            </span>
+                            <span className="stats-score-cell" style={{ color: scoreColor(s.readinessScore) }}>
+                              {s.readinessScore != null ? s.readinessScore : '—'}
+                            </span>
+                            <span>{s.steps != null ? s.steps.toLocaleString() : '—'}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="oura-block">

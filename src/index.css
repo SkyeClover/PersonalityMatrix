@@ -18,29 +18,123 @@
   box-sizing: border-box;
 }
 
+/* Slim, muted scrollbars (sidebar panel and any overflow area) */
+.panel {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font-family: 'Crimson Pro', Georgia, serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 .app {
-  min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- Animations ---- */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes savedPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .app-header {
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.5rem 1.25rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(22, 24, 31, 0.98) 0%, var(--surface) 100%);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.greeting {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-brand {
+  margin-top: 0.25rem;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .header-row {
@@ -65,30 +159,33 @@ body {
 }
 
 .date-picker {
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.6rem;
   font: inherit;
   font-size: 0.9rem;
   font-family: 'JetBrains Mono', monospace;
   color: var(--text);
-  background: var(--surface);
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .date-picker:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
 }
 
 .saved-badge {
   font-size: 0.75rem;
   color: var(--node-strong);
   font-family: 'JetBrains Mono', monospace;
+  animation: savedPop 0.25s ease-out;
 }
 
 .tagline {
-  margin: 0.35rem 0 0;
-  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
@@ -105,10 +202,11 @@ body {
   display: flex;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar {
-  width: 280px;
+  width: 300px;
   padding: 0;
   border-right: 1px solid var(--border);
   background: var(--surface);
@@ -116,6 +214,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
 }
 
 .tabs {
@@ -135,7 +234,12 @@ body {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .tab:hover {
@@ -151,12 +255,13 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 1rem 1.25rem;
+  animation: fadeSlideIn 0.3s ease-out;
 }
 
 .checkin-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
 .sidebar-title {
@@ -186,13 +291,14 @@ body {
 
 .focus-input {
   width: 100%;
-  padding: 0.5rem 0.6rem;
+  padding: 0.5rem 0.65rem;
   font: inherit;
   font-size: 0.9rem;
   color: var(--text);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .focus-input::placeholder {
@@ -203,6 +309,7 @@ body {
 .focus-input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
 }
 
 .ratings-block {
@@ -238,22 +345,23 @@ body {
 }
 
 .rating-dot {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   font-size: 11px;
   font-family: 'JetBrains Mono', monospace;
   color: var(--text-muted);
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
 .rating-dot:hover {
   color: var(--text);
   border-color: var(--accent-dim);
+  transform: scale(1.05);
 }
 
 .rating-dot.active {
@@ -263,23 +371,27 @@ body {
 }
 
 .save-btn {
-  margin-top: 0.25rem;
-  padding: 0.5rem 1rem;
+  margin-top: 0.35rem;
+  padding: 0.55rem 1.1rem;
   font: inherit;
   font-size: 0.9rem;
+  font-weight: 500;
   color: var(--bg);
   background: var(--accent);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: filter 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .save-btn:hover {
   filter: brightness(1.1);
+  box-shadow: 0 2px 8px rgba(201, 162, 39, 0.25);
 }
 
 .save-btn:active {
   filter: brightness(0.95);
+  transform: scale(0.98);
 }
 
 .goals-block {
@@ -322,14 +434,15 @@ body {
 }
 
 .goal-remove {
-  padding: 0.2rem 0.4rem;
+  padding: 0.25rem 0.45rem;
   font-size: 1rem;
   line-height: 1;
   color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: 6px;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .goal-remove:hover {
@@ -348,19 +461,21 @@ body {
 }
 
 .add-goal-btn {
-  padding: 0.5rem 0.6rem;
+  padding: 0.5rem 0.7rem;
   font: inherit;
   font-size: 0.85rem;
   color: var(--bg);
   background: var(--accent-dim);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   flex-shrink: 0;
+  transition: filter 0.2s ease, transform 0.15s ease;
 }
 
 .add-goal-btn:hover {
   filter: brightness(1.1);
+  transform: scale(1.02);
 }
 
 .sleep-dots {
@@ -490,6 +605,48 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.stats-block.collapsible .stats-block-toggle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stats-block.collapsible .stats-block-toggle:hover {
+  color: var(--accent);
+}
+
+.stats-block.collapsible .stats-block-toggle .stats-heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.stats-block-summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stats-block-chevron {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.stats-block-content {
+  margin-top: 0.5rem;
+}
+
 .stats-heading {
   margin: 0 0 0.5rem;
   font-size: 0.95rem;
@@ -528,11 +685,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 0.5rem 0.6rem;
+  padding: 0.55rem 0.7rem;
   margin-bottom: 0.75rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.oura-summary-card:hover {
+  border-color: rgba(201, 162, 39, 0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 
 .oura-summary-card--compact .oura-summary-grid {
@@ -660,8 +823,9 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  overflow: auto;
   min-height: 0;
+  overflow: hidden;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .matrix-svg {
@@ -671,8 +835,9 @@ body {
 .matrix-3d-container {
   width: 100%;
   height: 100%;
-  min-height: 480px;
+  min-height: 400px;
   position: relative;
+  flex: 1;
   background: radial-gradient(
     ellipse 90% 80% at 50% 50%,
     rgba(74, 124, 89, 0.06) 0%,
