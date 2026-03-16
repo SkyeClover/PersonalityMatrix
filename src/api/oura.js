@@ -42,43 +42,65 @@ async function ouraFetchAll(token, path, startDate, endDate) {
 
 /**
  * Fetch daily sleep, readiness, and activity for a date range.
- * v2 endpoints: daily_sleep, daily_readiness, daily_activity (see cloud.ouraring.com/v2/docs).
+ * In the browser we use the same-origin /api/oura-proxy to avoid CORS; in Electron we call Oura directly.
  * Returns { daily_sleep, daily_readiness, daily_activity, errors }.
- * errors[] contains user-safe messages if any request failed.
  */
 export async function fetchOuraData(token, startDate, endDate) {
-  const errors = [];
+  const useProxy =
+    typeof window !== 'undefined' && !window.electronAPI?.fetchOura && typeof fetch === 'function'
+
+  if (useProxy) {
+    try {
+      const res = await fetch('/api/oura-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, startDate, endDate }),
+      })
+      const data = await res.json()
+      if (!res.ok) return { daily_sleep: { data: [] }, daily_readiness: { data: [] }, daily_activity: { data: [] }, errors: data.errors || ['Request failed.'] }
+      return data
+    } catch (e) {
+      return {
+        daily_sleep: { data: [], error: e.message },
+        daily_readiness: { data: [], error: e.message },
+        daily_activity: { data: [], error: e.message },
+        errors: ['Could not reach the server. Try again later.'],
+      }
+    }
+  }
+
+  const errors = []
   const safeErr = (e) => {
-    const msg = e?.message || '';
-    if (msg.includes('401') || msg.includes('Unauthorized')) return 'Connection expired or denied. Try connecting again.';
-    if (msg.includes('403')) return 'Access denied. Check your Oura subscription and try again.';
+    const msg = e?.message || ''
+    if (msg.includes('401') || msg.includes('Unauthorized')) return 'Connection expired or denied. Try connecting again.'
+    if (msg.includes('403')) return 'Access denied. Check your Oura subscription and try again.'
     if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS'))
-      return 'Could not reach Oura from this browser. Try the desktop app or try again later.';
-    return 'Request failed. Try again later.';
-  };
-
-  let daily_sleep = { data: [] };
-  let daily_readiness = { data: [] };
-  let daily_activity = { data: [] };
-
-  try {
-    daily_sleep.data = await ouraFetchAll(token, '/daily_sleep', startDate, endDate);
-  } catch (e) {
-    daily_sleep.error = e.message;
-    errors.push(`Sleep: ${safeErr(e)}`);
-  }
-  try {
-    daily_readiness.data = await ouraFetchAll(token, '/daily_readiness', startDate, endDate);
-  } catch (e) {
-    daily_readiness.error = e.message;
-    errors.push(`Readiness: ${safeErr(e)}`);
-  }
-  try {
-    daily_activity.data = await ouraFetchAll(token, '/daily_activity', startDate, endDate);
-  } catch (e) {
-    daily_activity.error = e.message;
-    errors.push(`Activity: ${safeErr(e)}`);
+      return 'Could not reach Oura from this browser. Try the desktop app or try again later.'
+    return 'Request failed. Try again later.'
   }
 
-  return { daily_sleep, daily_readiness, daily_activity, errors };
+  let daily_sleep = { data: [] }
+  let daily_readiness = { data: [] }
+  let daily_activity = { data: [] }
+
+  try {
+    daily_sleep.data = await ouraFetchAll(token, '/daily_sleep', startDate, endDate)
+  } catch (e) {
+    daily_sleep.error = e.message
+    errors.push(`Sleep: ${safeErr(e)}`)
+  }
+  try {
+    daily_readiness.data = await ouraFetchAll(token, '/daily_readiness', startDate, endDate)
+  } catch (e) {
+    daily_readiness.error = e.message
+    errors.push(`Readiness: ${safeErr(e)}`)
+  }
+  try {
+    daily_activity.data = await ouraFetchAll(token, '/daily_activity', startDate, endDate)
+  } catch (e) {
+    daily_activity.error = e.message
+    errors.push(`Activity: ${safeErr(e)}`)
+  }
+
+  return { daily_sleep, daily_readiness, daily_activity, errors }
 }
