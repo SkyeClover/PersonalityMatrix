@@ -11,7 +11,7 @@ A **daily check-in** app that uses the [Personality Matrix](https://www.walkerja
 - **Diary** — Freeform daily log: one text area per day for whatever you want to remember.
 - **Progress** — Last 14 days: average ratings per dimension (morning vs evening), goal completion %, and **Stats** (sleep, readiness, steps).
 - **Stats** — Per-day stats: Oura sleep score, readiness score, steps (and manual sleep quality from morning check-in).
-- **Oura Ring** — In Progress, **Connect with Oura** (OAuth via Supabase) or paste a [Personal Access Token](https://cloud.ouraring.com/personal-access-tokens), then **Fetch last 14 days**. Best in the Electron app (avoids CORS).
+- **Oura Ring** — In Progress, **Connect with Oura** to import sleep, readiness, and steps. Data is auto-imported when you connect; use **Import again** to refresh.
 - **3D matrix** — The atom visualization reflects whichever tab you’re on (morning or evening): core = focus, nodes = your ratings.
 
 All data is stored in your browser (localStorage). No accounts, no backend. Oura token is stored locally and only sent to Oura when you click Fetch.

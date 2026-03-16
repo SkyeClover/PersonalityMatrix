@@ -526,15 +526,17 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.oura-token-input {
-  margin-top: 0.35rem;
-}
-
 .oura-actions {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.oura-status {
+  font-size: 0.9rem;
+  color: var(--node-strong);
 }
 
 .save-btn.secondary {

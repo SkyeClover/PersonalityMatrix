@@ -1,0 +1,12 @@
+# Supabase config for Oura OAuth Edge Function.
+# Run Supabase CLI commands from the supabase-oura directory.
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.oura-callback]
+verify_jwt = false

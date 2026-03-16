@@ -101,35 +101,57 @@ export default function App() {
   const [tab, setTab] = useState('Morning');
   const [day, setDay] = useState(() => getDay(getTodayKey()));
   const [saved, setSaved] = useState(false);
-  const [ouraTokenInput, setOuraTokenInput] = useState(getOuraToken);
   const [ouraFetching, setOuraFetching] = useState(false);
   const [ouraError, setOuraError] = useState(null);
   const [ouraSuccess, setOuraSuccess] = useState(null);
 
-  // Parse OAuth callback hash on load (Supabase redirects here with #access_token=...&refresh_token=...&expires_in=...)
+  const fetchOuraDataInternal = useCallback(async (token) => {
+    setOuraFetching(true);
+    setOuraError(null);
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 14);
+    const startDate = start.toISOString().slice(0, 10);
+    const endDate = end.toISOString().slice(0, 10);
+    try {
+      let data;
+      if (typeof window !== 'undefined' && window.electronAPI?.fetchOura) {
+        data = await window.electronAPI.fetchOura(token, startDate, endDate);
+      } else {
+        data = await fetchOuraData(token, startDate, endDate);
+      }
+      const updated = mergeOuraIntoDays(data);
+      setOuraSuccess(`Imported ${updated} days from Oura.`);
+      setTimeout(() => setOuraSuccess(null), 4000);
+      setDay(getDay(dateKey));
+    } catch (err) {
+      setOuraError(err?.message || 'Import failed.');
+    } finally {
+      setOuraFetching(false);
+    }
+  }, [dateKey]);
+
+  // Parse OAuth callback hash on load; auto-import data when user returns from Oura
   useEffect(() => {
     if (typeof window === 'undefined' || !window.location.hash) return;
     const hash = window.location.hash.slice(1);
     const params = Object.fromEntries(new URLSearchParams(hash));
     if (params.error) {
       setOuraError(params.error_description || params.error);
-      setOuraTokenInput('');
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
       return;
     }
     if (params.access_token) {
       setOuraToken(params.access_token);
-      setOuraTokenInput(params.access_token);
       if (params.refresh_token) setOuraRefreshToken(params.refresh_token);
       if (params.expires_in) {
         const expiresAt = Date.now() + Number(params.expires_in) * 1000;
         setOuraExpiresAt(expiresAt);
       }
-      setOuraSuccess('Connected with Oura. You can fetch data below.');
-      setTimeout(() => setOuraSuccess(null), 5000);
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      fetchOuraDataInternal(params.access_token);
     }
-  }, []);
+  }, [fetchOuraDataInternal]);
 
   const loadDay = useCallback((key) => {
     setDay(getDay(key));
@@ -179,15 +201,9 @@ export default function App() {
   const matrixSource = tab === 'Morning' ? day.morning : day.evening;
   const statsTrends = getStatsTrends(14);
 
-  const handleSaveOuraToken = () => {
-    setOuraToken(ouraTokenInput);
-    setOuraError(null);
-    setOuraSuccess('Token saved.');
-    setTimeout(() => setOuraSuccess(null), 3000);
-  };
-
   const ouraClientId = import.meta.env.VITE_OURA_CLIENT_ID;
   const ouraCallbackUrl = import.meta.env.VITE_OURA_OAUTH_CALLBACK_URL;
+  const hasOuraToken = !!getOuraToken();
 
   const handleConnectOura = () => {
     if (!ouraClientId || !ouraCallbackUrl) {
@@ -203,37 +219,9 @@ export default function App() {
     window.location.href = authUrl;
   };
 
-  const handleFetchOura = async () => {
-    const token = ouraTokenInput.trim() || getOuraToken();
-    if (!token) {
-      setOuraError('Enter your Oura Personal Access Token first.');
-      return;
-    }
-    setOuraToken(token);
-    setOuraFetching(true);
-    setOuraError(null);
-    setOuraSuccess(null);
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 14);
-    const startDate = start.toISOString().slice(0, 10);
-    const endDate = end.toISOString().slice(0, 10);
-    try {
-      let data;
-      if (typeof window !== 'undefined' && window.electronAPI?.fetchOura) {
-        data = await window.electronAPI.fetchOura(token, startDate, endDate);
-      } else {
-        data = await fetchOuraData(token, startDate, endDate);
-      }
-      const updated = mergeOuraIntoDays(data);
-      setOuraSuccess(`Imported ${updated} days from Oura.`);
-      setTimeout(() => setOuraSuccess(null), 4000);
-      setDay(getDay(dateKey));
-    } catch (err) {
-      setOuraError(err?.message || 'Fetch failed. In browser, CORS may block Oura — try the Electron app.');
-    } finally {
-      setOuraFetching(false);
-    }
+  const handleRefreshOura = () => {
+    const token = getOuraToken();
+    if (token) fetchOuraDataInternal(token);
   };
 
   const matrix = blockToMatrix(
@@ -471,33 +459,35 @@ export default function App() {
 
                 <div className="oura-block">
                   <h3 className="stats-heading">Oura Ring</h3>
-                  {ouraCallbackUrl ? (
-                    <p className="label-text">Connect with Oura (recommended) or paste a Personal Access Token below.</p>
+                  <p className="label-text">Sleep, readiness, and steps from your Oura Ring.</p>
+                  {ouraClientId && ouraCallbackUrl ? (
+                    <>
+                      {hasOuraToken ? (
+                        <div className="oura-actions">
+                          <span className="oura-status">Connected</span>
+                          <button
+                            type="button"
+                            className="save-btn secondary"
+                            onClick={handleRefreshOura}
+                            disabled={ouraFetching}
+                          >
+                            {ouraFetching ? 'Importing…' : 'Import again'}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="save-btn"
+                          onClick={handleConnectOura}
+                          disabled={ouraFetching}
+                        >
+                          Connect with Oura
+                        </button>
+                      )}
+                    </>
                   ) : (
-                    <p className="label-text">Personal Access Token from <a href="https://cloud.ouraring.com/personal-access-tokens" target="_blank" rel="noopener noreferrer">cloud.ouraring.com</a></p>
+                    <p className="oura-message error">OAuth not configured.</p>
                   )}
-                  {ouraClientId && ouraCallbackUrl && (
-                    <div className="oura-actions" style={{ marginBottom: '0.5rem' }}>
-                      <button type="button" className="save-btn" onClick={handleConnectOura}>
-                        Connect with Oura
-                      </button>
-                    </div>
-                  )}
-                  <input
-                    type="password"
-                    className="focus-input oura-token-input"
-                    placeholder="Or paste token (stored locally only)"
-                    value={ouraTokenInput}
-                    onChange={(e) => setOuraTokenInput(e.target.value)}
-                  />
-                  <div className="oura-actions">
-                    <button type="button" className="save-btn secondary" onClick={handleSaveOuraToken}>
-                      Save token
-                    </button>
-                    <button type="button" className="save-btn" onClick={handleFetchOura} disabled={ouraFetching}>
-                      {ouraFetching ? 'Fetching…' : 'Fetch last 14 days'}
-                    </button>
-                  </div>
                   {ouraError && <p className="oura-message error">{ouraError}</p>}
                   {ouraSuccess && <p className="oura-message success">{ouraSuccess}</p>}
                 </div>
