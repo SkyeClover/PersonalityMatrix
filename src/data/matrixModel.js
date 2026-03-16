@@ -162,6 +162,28 @@ export function getDay(dateKey) {
   return createEmptyDay();
 }
 
+/** Stats for a single day (for display in matrix/sidebar). */
+export function getDayStats(dateKey) {
+  const day = getDay(dateKey);
+  return day?.stats ? { ...emptyStats(), ...day.stats } : emptyStats();
+}
+
+/** Build a synthetic "average" block from 14-day morning averages for the Progress matrix view. */
+export function getAverageMorningBlock(lastNDays = 14) {
+  const trends = getTrends(lastNDays);
+  const ratings = {};
+  DEFAULT_NODES.forEach((n) => {
+    const v = trends.morningAvgs[n.id];
+    ratings[n.id] = v != null ? Math.round(v) : null;
+  });
+  return {
+    ratings,
+    focus: '14-day avg',
+    note: '',
+    sleepQuality: null,
+  };
+}
+
 export function saveDay(dateKey, day) {
   const all = loadDays();
   all[dateKey] = {

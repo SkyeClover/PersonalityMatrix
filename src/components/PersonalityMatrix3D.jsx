@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
+import { scoreColor } from './OuraSummaryCard';
 
 /**
  * Colors for each feeling (emotion-color psychology):
@@ -67,7 +68,7 @@ function getRingPositions(count) {
   return positions;
 }
 
-function Core({ core, blendedColor, blendedEmissive }) {
+function Core({ core, blendedColor, blendedEmissive, ouraStats }) {
   const meshRef = useRef();
   const glowRef = useRef();
   useFrame((state) => {
@@ -79,6 +80,7 @@ function Core({ core, blendedColor, blendedEmissive }) {
       glowRef.current.material.opacity = glow;
     }
   });
+  const hasOura = ouraStats && (ouraStats.sleepScore != null || ouraStats.readinessScore != null || ouraStats.steps != null);
   return (
     <group>
       <mesh ref={glowRef}>
@@ -99,6 +101,19 @@ function Core({ core, blendedColor, blendedEmissive }) {
         <div className="core-label-3d">
           <span className="core-label-title">{core.label}</span>
           <span className="core-label-value">{core.value}</span>
+          {hasOura && (
+            <div className="core-oura-3d">
+              {ouraStats.sleepScore != null && (
+                <span style={{ color: scoreColor(ouraStats.sleepScore) }}>Sleep {ouraStats.sleepScore}</span>
+              )}
+              {ouraStats.readinessScore != null && (
+                <span style={{ color: scoreColor(ouraStats.readinessScore) }}>Readiness {ouraStats.readinessScore}</span>
+              )}
+              {ouraStats.steps != null && (
+                <span>Steps {ouraStats.steps.toLocaleString()}</span>
+              )}
+            </div>
+          )}
         </div>
       </Html>
     </group>
@@ -166,7 +181,7 @@ function OrbitalWithNodes({ nodes, initialRotation, speed, speedX = 0, speedZ = 
   );
 }
 
-function Scene({ matrix }) {
+function Scene({ matrix, ouraStats }) {
   const { core, nodes } = matrix;
   const half = Math.floor(nodes.length / 2);
   const ring1Nodes = useMemo(() => nodes.slice(0, half), [nodes, half]);
@@ -196,7 +211,7 @@ function Scene({ matrix }) {
         autoRotateSpeed={0.35}
       />
 
-      <Core core={core} blendedColor={blendedColor} blendedEmissive={blendedEmissive} />
+      <Core core={core} blendedColor={blendedColor} blendedEmissive={blendedEmissive} ouraStats={ouraStats} />
 
       {/* Ring 1: XY plane — Energy, Mood, Focus, Calm (tumble so axis moves) */}
       <OrbitalWithNodes nodes={ring1Nodes} initialRotation={[0, 0, 0]} speed={0.08} speedX={0.03} speedZ={-0.02} />
@@ -207,11 +222,11 @@ function Scene({ matrix }) {
   );
 }
 
-export default function PersonalityMatrix3D({ matrix }) {
+export default function PersonalityMatrix3D({ matrix, ouraStats }) {
   return (
     <div className="matrix-3d-container">
       <Canvas camera={{ position: [5, 3, 5], fov: 45 }} gl={{ antialias: true, alpha: false }}>
-        <Scene matrix={matrix} />
+        <Scene matrix={matrix} ouraStats={ouraStats} />
       </Canvas>
     </div>
   );

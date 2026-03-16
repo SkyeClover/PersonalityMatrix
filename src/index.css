@@ -520,6 +520,57 @@ body {
   font-family: 'JetBrains Mono', monospace;
 }
 
+.stats-score-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+.oura-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.oura-summary-card--compact .oura-summary-grid {
+  gap: 0.5rem 1rem;
+}
+
+.oura-summary-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.oura-summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.oura-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.oura-summary-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.oura-summary-value {
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 .oura-block {
   margin-top: 1rem;
   padding-top: 1rem;
@@ -632,12 +683,21 @@ body {
 
 .core-label-3d {
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
   background: rgba(13, 14, 18, 0.85);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  border: 1px solid var(--border);
-  user-select: none;
+}
+
+.core-oura-3d {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.25rem;
+  font-size: 9px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .core-label-title {

@@ -8,6 +8,8 @@ import {
   blockToMatrix,
   getTrends,
   getStatsTrends,
+  getDayStats,
+  getAverageMorningBlock,
   getOuraToken,
   setOuraToken,
   setOuraRefreshToken,
@@ -17,6 +19,7 @@ import {
   generateGoalId,
 } from './data/matrixModel';
 import { fetchOuraData } from './api/oura';
+import OuraSummaryCard, { scoreColor } from './components/OuraSummaryCard';
 
 const TABS = ['Morning', 'Evening', 'Daily log', 'Progress'];
 
@@ -211,6 +214,20 @@ export default function App() {
 
   const matrixSource = tab === 'Morning' ? day.morning : day.evening;
   const statsTrends = getStatsTrends(14);
+  const dayStats = getDayStats(dateKey);
+  const last7 = statsTrends.slice(-7);
+  const avg = (arr, key) => {
+    const vals = arr.map((r) => r[key]).filter((v) => v != null);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  };
+  const oura7DaySummary =
+    last7.length > 0
+      ? {
+          sleepScore: avg(last7, 'sleepScore'),
+          readinessScore: avg(last7, 'readinessScore'),
+          steps: avg(last7, 'steps'),
+        }
+      : null;
 
   const ouraClientId = import.meta.env.VITE_OURA_CLIENT_ID;
   const ouraCallbackUrl = import.meta.env.VITE_OURA_OAUTH_CALLBACK_URL;
@@ -235,11 +252,14 @@ export default function App() {
     if (token) fetchOuraDataInternal(token);
   };
 
-  const matrix = blockToMatrix(
-    matrixSource,
-    tab === 'Morning' ? "Morning focus" : "Evening reflection",
-    tab === 'Morning' ? day.morning.focus : null
-  );
+  const matrix =
+    tab === 'Progress'
+      ? blockToMatrix(getAverageMorningBlock(14), '14-day average', null)
+      : blockToMatrix(
+          matrixSource,
+          tab === 'Morning' ? 'Morning focus' : 'Evening reflection',
+          tab === 'Morning' ? day.morning.focus : null
+        );
   const trends = getTrends(14);
   const isToday = dateKey === getTodayKey();
 
@@ -281,6 +301,7 @@ export default function App() {
               <>
                 <section className="checkin-section">
                   <h2 className="sidebar-title">Start of day</h2>
+                  <OuraSummaryCard stats={dayStats} title="Today's Oura" compact />
                   <label className="focus-label">
                     <span className="label-text">Focus or intention</span>
                     <input
@@ -347,6 +368,7 @@ export default function App() {
               <>
                 <section className="checkin-section">
                   <h2 className="sidebar-title">End of day</h2>
+                  <OuraSummaryCard stats={dayStats} title="Today's Oura" compact />
                   <GoalsList
                     goals={day.goals}
                     onToggle={toggleGoal}
@@ -419,6 +441,7 @@ export default function App() {
             {tab === 'Progress' && (
               <section className="progress-section">
                 <h2 className="sidebar-title">Progress</h2>
+                <OuraSummaryCard stats={oura7DaySummary} title="Last 7 days (avg)" compact />
                 <p className="label-text">Last 14 days · averages</p>
                 <div className="trend-grid">
                   {DEFAULT_NODES.map((node) => (
@@ -460,8 +483,12 @@ export default function App() {
                     {statsTrends.slice().reverse().map((s) => (
                       <div key={s.dateKey} className="stats-row">
                         <span className="stats-date">{s.dateKey}</span>
-                        <span>{s.sleepScore != null ? s.sleepScore : (s.manualSleepQuality != null ? `M${s.manualSleepQuality}` : '—')}</span>
-                        <span>{s.readinessScore != null ? s.readinessScore : '—'}</span>
+                        <span className="stats-score-cell" style={{ color: scoreColor(s.sleepScore ?? s.manualSleepQuality) }}>
+                          {s.sleepScore != null ? s.sleepScore : s.manualSleepQuality != null ? `M${s.manualSleepQuality}` : '—'}
+                        </span>
+                        <span className="stats-score-cell" style={{ color: scoreColor(s.readinessScore) }}>
+                          {s.readinessScore != null ? s.readinessScore : '—'}
+                        </span>
                         <span>{s.steps != null ? s.steps.toLocaleString() : '—'}</span>
                       </div>
                     ))}
@@ -508,13 +535,10 @@ export default function App() {
         </aside>
 
         <main className="matrix-container">
-          {tab !== 'Progress' ? (
-            <PersonalityMatrix3D matrix={matrix} />
-          ) : (
-            <div className="progress-hero">
-              <p className="progress-hero-text">Your matrix reflects morning or evening check-ins. Switch to Morning or Evening to see it.</p>
-            </div>
-          )}
+          <PersonalityMatrix3D
+            matrix={matrix}
+            ouraStats={tab === 'Progress' ? null : dayStats}
+          />
         </main>
       </div>
       <footer className="app-footer">
